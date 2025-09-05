@@ -1,10 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "api/analyze.py",
-      "use": "@vercel/python"
-    }
-  ],
   "functions": {
     "api/analyze.py": {
       "runtime": "python3.11",
