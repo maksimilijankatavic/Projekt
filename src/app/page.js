@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+
 "use client"; {/* Bez ovog hook-ovi ne rade. */}
 
 import Header from "@/components/shared/Header";
