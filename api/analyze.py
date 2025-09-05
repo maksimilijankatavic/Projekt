@@ -2,48 +2,48 @@ from http.server import BaseHTTPRequestHandler
 import json, os
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import joblib
-import numpy as np
 import requests
 
-# Initialize VADER once (cold start)
+# Initialize VADER once
 analyzer = SentimentIntensityAnalyzer()
 
-# Load Naive Bayes model + vectorizer from /models
+# Load Naive Bayes model (precomputed probabilities / tiny model)
 BASE = os.path.dirname(__file__)
 NB_MODEL_PATH = os.path.join(BASE, '..', 'models', 'nb-model.pkl')
 VEC_PATH = os.path.join(BASE, '..', 'models', 'nb-vectorizer.pkl')
 nb_clf = joblib.load(NB_MODEL_PATH) if os.path.exists(NB_MODEL_PATH) else None
 vectorizer = joblib.load(VEC_PATH) if os.path.exists(VEC_PATH) else None
 
-# Hugging Face API for RoBERTa
+# Hugging Face API
 HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 
-def vader_sentiment(text: str):
+def vader_sentiment(text):
     s = analyzer.polarity_scores(text)
-    label = "neutral"
     if s["compound"] >= 0.05:
         label = "positive"
     elif s["compound"] <= -0.05:
         label = "negative"
+    else:
+        label = "neutral"
     return {"label": label, "compound": s["compound"], "raw": s}
 
 
-def nb_sentiment(text: str):
+def nb_sentiment(text):
     if nb_clf is None or vectorizer is None:
         return {"label": "unavailable", "error": "Naive Bayes model not found"}
     X = vectorizer.transform([text])
     if hasattr(nb_clf, "predict_proba"):
         proba = nb_clf.predict_proba(X)[0]
         classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative", "positive"])]
-        idx = int(np.argmax(proba))
+        idx = max(range(len(proba)), key=lambda i: proba[i])  # no numpy
         return {"label": classes[idx], "proba": float(proba[idx]), "classes": classes}
     label = nb_clf.predict(X)[0]
     return {"label": str(label)}
 
 
-def roberta_sentiment(text: str):
+def roberta_sentiment(text):
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
     try:
         r = requests.post(HF_API_URL, headers=headers, json={"inputs": text}, timeout=15)
@@ -54,7 +54,6 @@ def roberta_sentiment(text: str):
         candidates = data[0] if isinstance(data, list) else data
         if isinstance(candidates, list) and candidates and "label" in candidates[0]:
             best = max(candidates, key=lambda c: c.get("score", 0))
-            # Map Hugging Face labels
             mapping = {"LABEL_0": "negative", "LABEL_1": "neutral", "LABEL_2": "positive"}
             label = mapping.get(best["label"], best["label"].lower())
             return {"label": label, "score": float(best["score"])}
@@ -103,7 +102,7 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "Missing 'text'"}).encode("utf-8"))
                 return
 
-            truncated = text[:2048]  # safety limit
+            truncated = text[:2048]
 
             v = vader_sentiment(truncated)
             n = nb_sentiment(truncated)
