@@ -1,7 +1,6 @@
 # api/analyze.py
 import os
 import json
-from http.server import BaseHTTPRequestHandler
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import joblib
 import requests
@@ -17,110 +16,123 @@ HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-rob
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        try:
-            content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length)
+def handler(request, context):
+    # Set CORS headers
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        # Handle OPTIONS request (CORS preflight)
+        if request.method == "OPTIONS":
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': ''
+            }
             
-            try:
-                payload = json.loads(post_data.decode('utf-8')) if post_data else {}
-            except json.JSONDecodeError:
-                payload = {}
-            
-            text = (payload.get("text") or "").strip()
-            if not text:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"ok": False, "error": "Missing 'text'"}).encode())
-                return
-
-            truncated = text[:2048]
-
-            # VADER sentiment
-            try:
-                s = analyzer.polarity_scores(truncated)
-                if s["compound"] >= 0.05:
-                    v = {"label": "positive", "compound": s["compound"], "raw": s}
-                elif s["compound"] <= -0.05:
-                    v = {"label": "negative", "compound": s["compound"], "raw": s}
-                else:
-                    v = {"label": "neutral", "compound": s["compound"], "raw": s}
-            except Exception as e:
-                v = {"label": "error", "error": str(e)}
-
-            # Naive Bayes
-            try:
-                if nb_clf and vectorizer:
-                    X = vectorizer.transform([truncated])
-                    if hasattr(nb_clf, "predict_proba"):
-                        proba = nb_clf.predict_proba(X)[0]
-                        classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative","positive"])]
-                        idx = max(range(len(proba)), key=lambda i: proba[i])
-                        n = {"label": classes[idx], "proba": float(proba[idx]), "classes": classes}
-                    else:
-                        n = {"label": str(nb_clf.predict(X)[0])}
-                else:
-                    n = {"label": "unavailable", "error": "Naive Bayes model not found"}
-            except Exception as e:
-                n = {"label": "error", "error": str(e)}
-
-            # RoBERTa
-            try:
-                headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-                r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=10)
-                r.raise_for_status()
-                data = r.json()
-                if isinstance(data, dict) and "error" in data:
-                    r_result = {"label": "unknown", "score": 0.0, "error": data["error"]}
-                else:
-                    candidates = data[0] if isinstance(data, list) else data
-                    if isinstance(candidates, list) and candidates and "label" in candidates[0]:
-                        best = max(candidates, key=lambda c: c.get("score",0))
-                        mapping = {"LABEL_0":"negative","LABEL_1":"neutral","LABEL_2":"positive"}
-                        r_result = {"label": mapping.get(best["label"], best["label"].lower()), "score": float(best["score"])}
-                    else:
-                        r_result = {"label": "unknown", "score": 0.0}
-            except Exception as e:
-                r_result = {"label":"unknown","score":0.0,"error": str(e)}
-
-            # Majority vote
-            labels = [v.get("label"), n.get("label"), r_result.get("label")]
-            counts = {k: labels.count(k) for k in set(labels)}
-            consensus_label, agreement = max(counts.items(), key=lambda kv: kv[1])
-
-            res = {
-                "ok": True,
-                "input_chars": len(text),
-                "used_chars": len(truncated),
-                "models": {"vader": v, "naive_bayes": n, "roberta": r_result},
-                "consensus": {"label": consensus_label, "agreement": agreement / max(1,len(labels))}
+        # Only allow POST requests
+        if request.method != "POST":
+            return {
+                'statusCode': 405,
+                'headers': headers,
+                'body': json.dumps({"ok": False, "error": f"{request.method} not allowed"})
             }
 
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Access-Control-Allow-Methods', 'POST')
-            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-            self.end_headers()
-            self.wfile.write(json.dumps(res).encode())
+        # Parse request body
+        try:
+            if hasattr(request, 'body'):
+                body = request.body
+                if isinstance(body, bytes):
+                    body = body.decode('utf-8')
+                payload = json.loads(body) if body else {}
+            else:
+                payload = {}
+        except (json.JSONDecodeError, AttributeError):
+            payload = {}
+            
+        text = (payload.get("text") or "").strip()
+        if not text:
+            return {
+                'statusCode': 400,
+                'headers': headers,
+                'body': json.dumps({"ok": False, "error": "Missing 'text'"})
+            }
 
+        truncated = text[:2048]
+
+        # VADER sentiment
+        try:
+            s = analyzer.polarity_scores(truncated)
+            if s["compound"] >= 0.05:
+                v = {"label": "positive", "compound": s["compound"], "raw": s}
+            elif s["compound"] <= -0.05:
+                v = {"label": "negative", "compound": s["compound"], "raw": s}
+            else:
+                v = {"label": "neutral", "compound": s["compound"], "raw": s}
         except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"ok": False, "error": str(e)}).encode())
+            v = {"label": "error", "error": str(e)}
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+        # Naive Bayes
+        try:
+            if nb_clf and vectorizer:
+                X = vectorizer.transform([truncated])
+                if hasattr(nb_clf, "predict_proba"):
+                    proba = nb_clf.predict_proba(X)[0]
+                    classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative","positive"])]
+                    idx = max(range(len(proba)), key=lambda i: proba[i])
+                    n = {"label": classes[idx], "proba": float(proba[idx]), "classes": classes}
+                else:
+                    n = {"label": str(nb_clf.predict(X)[0])}
+            else:
+                n = {"label": "unavailable", "error": "Naive Bayes model not found"}
+        except Exception as e:
+            n = {"label": "error", "error": str(e)}
 
-    def do_GET(self):
-        self.send_response(405)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps({"ok": False, "error": "GET not allowed"}).encode())
+        # RoBERTa
+        try:
+            headers_hf = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+            r = requests.post(HF_API_URL, headers=headers_hf, json={"inputs": truncated}, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, dict) and "error" in data:
+                r_result = {"label": "unknown", "score": 0.0, "error": data["error"]}
+            else:
+                candidates = data[0] if isinstance(data, list) else data
+                if isinstance(candidates, list) and candidates and "label" in candidates[0]:
+                    best = max(candidates, key=lambda c: c.get("score",0))
+                    mapping = {"LABEL_0":"negative","LABEL_1":"neutral","LABEL_2":"positive"}
+                    r_result = {"label": mapping.get(best["label"], best["label"].lower()), "score": float(best["score"])}
+                else:
+                    r_result = {"label": "unknown", "score": 0.0}
+        except Exception as e:
+            r_result = {"label":"unknown","score":0.0,"error": str(e)}
+
+        # Majority vote
+        labels = [v.get("label"), n.get("label"), r_result.get("label")]
+        counts = {k: labels.count(k) for k in set(labels)}
+        consensus_label, agreement = max(counts.items(), key=lambda kv: kv[1])
+
+        res = {
+            "ok": True,
+            "input_chars": len(text),
+            "used_chars": len(truncated),
+            "models": {"vader": v, "naive_bayes": n, "roberta": r_result},
+            "consensus": {"label": consensus_label, "agreement": agreement / max(1,len(labels))}
+        }
+
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps(res)
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"ok": False, "error": str(e)})
+        }
