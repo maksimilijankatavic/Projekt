@@ -7,7 +7,7 @@ import requests
 # Initialize VADER once
 analyzer = SentimentIntensityAnalyzer()
 
-# Load Naive Bayes model (precomputed probabilities / tiny model)
+# Load Naive Bayes model (tiny model)
 BASE = os.path.dirname(__file__)
 NB_MODEL_PATH = os.path.join(BASE, '..', 'models', 'nb-model.pkl')
 VEC_PATH = os.path.join(BASE, '..', 'models', 'nb-vectorizer.pkl')
@@ -37,7 +37,7 @@ def nb_sentiment(text):
     if hasattr(nb_clf, "predict_proba"):
         proba = nb_clf.predict_proba(X)[0]
         classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative", "positive"])]
-        idx = max(range(len(proba)), key=lambda i: proba[i])  # no numpy
+        idx = max(range(len(proba)), key=lambda i: proba[i])
         return {"label": classes[idx], "proba": float(proba[idx]), "classes": classes}
     label = nb_clf.predict(X)[0]
     return {"label": str(label)}
@@ -84,13 +84,19 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
-    def do_OPTIONS(self):
-        self._set_headers(200)
+    def _write_json(self, data, status=200):
+        self._set_headers(status)
+        self.wfile.write(json.dumps(data).encode("utf-8"))
 
+    # Handle preflight requests
+    def do_OPTIONS(self):
+        self._write_json({"ok": True, "message": "OPTIONS request acknowledged"})
+
+    # Handle POST requests
     def do_POST(self):
         try:
             length = int(self.headers.get("Content-Length", 0))
@@ -98,15 +104,26 @@ class handler(BaseHTTPRequestHandler):
             payload = json.loads(body.decode("utf-8")) if body else {}
             text = (payload.get("text") or "").strip()
             if not text:
-                self._set_headers(400)
-                self.wfile.write(json.dumps({"error": "Missing 'text'"}).encode("utf-8"))
+                self._write_json({"ok": False, "error": "Missing 'text'"}, 400)
                 return
 
             truncated = text[:2048]
 
-            v = vader_sentiment(truncated)
-            n = nb_sentiment(truncated)
-            r = roberta_sentiment(truncated)
+            # Wrap each model in try/except to avoid crashes
+            try:
+                v = vader_sentiment(truncated)
+            except Exception as e:
+                v = {"label": "error", "error": str(e)}
+
+            try:
+                n = nb_sentiment(truncated)
+            except Exception as e:
+                n = {"label": "error", "error": str(e)}
+
+            try:
+                r = roberta_sentiment(truncated)
+            except Exception as e:
+                r = {"label": "error", "error": str(e)}
 
             labels = [v.get("label"), n.get("label"), r.get("label")]
             consensus, strength = majority_vote(labels)
@@ -118,8 +135,17 @@ class handler(BaseHTTPRequestHandler):
                 "models": {"vader": v, "naive_bayes": n, "roberta": r},
                 "consensus": {"label": consensus, "agreement": strength},
             }
-            self._set_headers(200)
-            self.wfile.write(json.dumps(res).encode("utf-8"))
+
+            self._write_json(res)
         except Exception as e:
-            self._set_headers(500)
-            self.wfile.write(json.dumps({"ok": False, "error": str(e)}).encode("utf-8"))
+            self._write_json({"ok": False, "error": str(e)}, 500)
+
+    # Catch-all for other HTTP methods
+    def do_GET(self):
+        self._write_json({"ok": False, "error": "GET method not allowed"}, 405)
+
+    def do_PUT(self):
+        self._write_json({"ok": False, "error": "PUT method not allowed"}, 405)
+
+    def do_DELETE(self):
+        self._write_json({"ok": False, "error": "DELETE method not allowed"}, 405)
