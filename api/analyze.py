@@ -104,8 +104,8 @@ def analyze():
 
 
 # For Vercel
-def handler(request, context):
-    return app(request.environ, lambda *args: None)
+def handler(environ, start_response):
+    return app(environ, start_response)
 
 
 if __name__ == '__main__':
