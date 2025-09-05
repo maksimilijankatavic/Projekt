@@ -1,9 +1,14 @@
 # api/analyze.py
 import os
 import json
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import joblib
 import requests
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -16,51 +21,19 @@ HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-rob
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 
-def handler(request, context):
-    # Set CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    }
-    
+@app.route('/api/analyze', methods=['POST', 'OPTIONS'])
+def analyze():
     try:
-        # Handle OPTIONS request (CORS preflight)
-        if request.method == "OPTIONS":
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': ''
-            }
+        if request.method == 'OPTIONS':
+            return '', 200
             
-        # Only allow POST requests
-        if request.method != "POST":
-            return {
-                'statusCode': 405,
-                'headers': headers,
-                'body': json.dumps({"ok": False, "error": f"{request.method} not allowed"})
-            }
+        if request.method != 'POST':
+            return jsonify({"ok": False, "error": f"{request.method} not allowed"}), 405
 
-        # Parse request body
-        try:
-            if hasattr(request, 'body'):
-                body = request.body
-                if isinstance(body, bytes):
-                    body = body.decode('utf-8')
-                payload = json.loads(body) if body else {}
-            else:
-                payload = {}
-        except (json.JSONDecodeError, AttributeError):
-            payload = {}
-            
+        payload = request.get_json() or {}
         text = (payload.get("text") or "").strip()
         if not text:
-            return {
-                'statusCode': 400,
-                'headers': headers,
-                'body': json.dumps({"ok": False, "error": "Missing 'text'"})
-            }
+            return jsonify({"ok": False, "error": "Missing 'text'"}), 400
 
         truncated = text[:2048]
 
@@ -94,8 +67,8 @@ def handler(request, context):
 
         # RoBERTa
         try:
-            headers_hf = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-            r = requests.post(HF_API_URL, headers=headers_hf, json={"inputs": truncated}, timeout=10)
+            headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+            r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=10)
             r.raise_for_status()
             data = r.json()
             if isinstance(data, dict) and "error" in data:
@@ -124,15 +97,16 @@ def handler(request, context):
             "consensus": {"label": consensus_label, "agreement": agreement / max(1,len(labels))}
         }
 
-        return {
-            'statusCode': 200,
-            'headers': headers,
-            'body': json.dumps(res)
-        }
+        return jsonify(res), 200
 
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': headers,
-            'body': json.dumps({"ok": False, "error": str(e)})
-        }
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# For Vercel
+def handler(request, context):
+    return app(request.environ, lambda *args: None)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
