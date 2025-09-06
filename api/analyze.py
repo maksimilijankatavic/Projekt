@@ -12,7 +12,7 @@ HF_TOKEN = os.environ.get("HF_TOKEN")
 
 # Replace with your actual Hugging Face Space URL
 # Format should be: https://your-username-space-name.hf.space/predict
-NB_API_URL = "https://maksimilijankatavic-nb-sentiment-classifier.hf.space/predict"
+NB_API_URL = "https://maksimilijankatavic-nb-sentiment-classifier.hf.space/run/predict"
 
 class handler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
@@ -71,10 +71,11 @@ class handler(BaseHTTPRequestHandler):
             try:
                 nb_response = requests.post(
                     NB_API_URL,
-                    json={"text": truncated},  # <--- FIXED: Spaces expects "text", not "data"
+                    json={"data": [truncated]},   # Gradio expects "data": [ ... ]
                     headers={"Content-Type": "application/json"},
                     timeout=10
                 )
+
 
                 if nb_response.status_code == 200:
                     nb_data = nb_response.json()
