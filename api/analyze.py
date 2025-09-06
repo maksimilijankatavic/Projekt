@@ -80,7 +80,14 @@ class handler(BaseHTTPRequestHandler):
                     api_name="/predict"
                 )
 
-                # Expecting result like: {"label": "...", "proba": ..., "classes": [...], "all_probabilities": [...]}
+                # If the result comes back as a string, try parsing JSON
+                if isinstance(result, str):
+                    try:
+                        result = json.loads(result)
+                    except json.JSONDecodeError:
+                        n = {"label": "error", "error": "NB returned non-JSON string", "raw_response": result}
+                        result = None
+
                 if isinstance(result, dict) and "label" in result:
                     n = {
                         "label": result["label"],
