@@ -67,7 +67,6 @@ export default function Home() {
 
         {data && (
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Results</h3>
             <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
               {JSON.stringify(data, null, 2)}
             </pre>
