@@ -93,7 +93,7 @@ class handler(BaseHTTPRequestHandler):
             # RoBERTa
             try:
                 headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-                r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=10)
+                r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=5)
                 r.raise_for_status()
                 data = r.json()
                 if isinstance(data, dict) and "error" in data:
@@ -106,6 +106,8 @@ class handler(BaseHTTPRequestHandler):
                         r_result = {"label": mapping.get(best["label"], best["label"].lower()), "score": float(best["score"])}
                     else:
                         r_result = {"label": "unknown", "score": 0.0}
+            except requests.exceptions.Timeout:
+                r_result = {"label":"unknown","score":0.0,"error": "HuggingFace API timeout"}
             except Exception as e:
                 r_result = {"label":"unknown","score":0.0,"error": str(e)}
 
