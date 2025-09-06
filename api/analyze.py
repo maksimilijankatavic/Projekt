@@ -2,21 +2,64 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import glob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import joblib
 import requests
 
 analyzer = SentimentIntensityAnalyzer()
 
-# Try to load models (they might not exist, that's OK)
+# Enhanced model loading with detailed debugging
 try:
-    NB_MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models', 'nb-model.pkl')
-    VEC_PATH = os.path.join(os.path.dirname(__file__), '..', 'models', 'nb-vectorizer.pkl')
-    nb_clf = joblib.load(NB_MODEL_PATH) if os.path.exists(NB_MODEL_PATH) else None
-    vectorizer = joblib.load(VEC_PATH) if os.path.exists(VEC_PATH) else None
-except:
+    current_dir = os.getcwd()
+    api_dir = os.path.dirname(__file__)
+    
+    # Try multiple possible paths for the models
+    possible_paths = [
+        os.path.join(api_dir, '..', 'models'),
+        os.path.join(current_dir, 'models'),
+        os.path.join('models'),
+        os.path.join(api_dir, 'models'),
+        os.path.join(api_dir, '..', '..', 'models'),
+    ]
+    
     nb_clf = None
     vectorizer = None
+    debug_paths = []
+    
+    for models_dir in possible_paths:
+        nb_path = os.path.join(models_dir, 'nb-model.pkl')
+        vec_path = os.path.join(models_dir, 'nb-vectorizer.pkl')
+        
+        debug_paths.append({
+            "models_dir": models_dir,
+            "nb_path": nb_path,
+            "vec_path": vec_path,
+            "nb_exists": os.path.exists(nb_path),
+            "vec_exists": os.path.exists(vec_path),
+            "dir_exists": os.path.exists(models_dir),
+            "dir_contents": glob.glob(os.path.join(models_dir, '*')) if os.path.exists(models_dir) else []
+        })
+        
+        if os.path.exists(nb_path) and os.path.exists(vec_path):
+            nb_clf = joblib.load(nb_path)
+            vectorizer = joblib.load(vec_path)
+            break
+    
+    # Store debug info for later use
+    model_debug_info = {
+        "current_dir": current_dir,
+        "api_dir": api_dir,
+        "paths_tried": debug_paths,
+        "models_loaded": nb_clf is not None and vectorizer is not None,
+        "root_contents": glob.glob(os.path.join(current_dir, '*')),
+        "api_parent_contents": glob.glob(os.path.join(api_dir, '..', '*')) if os.path.exists(os.path.join(api_dir, '..')) else []
+    }
+            
+except Exception as e:
+    nb_clf = None
+    vectorizer = None
+    model_debug_info = {"loading_error": str(e)}
 
 HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
@@ -74,7 +117,7 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 v = {"label": "error", "error": str(e)}
 
-            # Naive Bayes
+            # Naive Bayes with enhanced debugging
             try:
                 if nb_clf and vectorizer:
                     X = vectorizer.transform([truncated])
@@ -82,11 +125,17 @@ class handler(BaseHTTPRequestHandler):
                         proba = nb_clf.predict_proba(X)[0]
                         classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative","positive"])]
                         idx = max(range(len(proba)), key=lambda i: proba[i])
-                        n = {"label": classes[idx], "proba": float(proba[idx]), "classes": classes}
+                        n = {
+                            "label": classes[idx], 
+                            "proba": float(proba[idx]), 
+                            "classes": classes,
+                            "all_probabilities": [float(p) for p in proba]
+                        }
                     else:
-                        n = {"label": str(nb_clf.predict(X)[0])}
+                        prediction = nb_clf.predict(X)[0]
+                        n = {"label": str(prediction)}
                 else:
-                    n = {"label": "unavailable", "error": "Naive Bayes model not found"}
+                    n = {"label": "unavailable", "error": "Naive Bayes model not found", "debug": model_debug_info}
             except Exception as e:
                 n = {"label": "error", "error": str(e)}
 
