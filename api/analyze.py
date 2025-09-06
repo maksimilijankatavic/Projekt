@@ -13,7 +13,7 @@ nb_client = Client("maksimilijankatavic/nb-sentiment-classifier")
 
 analyzer = SentimentIntensityAnalyzer()
 
-HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
+HF_API_URL = "https://router.huggingface.co/hf-inference/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 # Replace with your actual Hugging Face Space URL
