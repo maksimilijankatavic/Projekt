@@ -69,38 +69,32 @@ class handler(BaseHTTPRequestHandler):
 
             # Naive Bayes via external API
             try:
-                # Updated to match HuggingFace Space API format
                 nb_response = requests.post(
                     NB_API_URL,
-                    json={"data": [truncated]},  # HF Spaces typically expect this format
+                    json={"text": truncated},  # <--- FIXED: Spaces expects "text", not "data"
                     headers={"Content-Type": "application/json"},
                     timeout=10
                 )
-                
+
                 if nb_response.status_code == 200:
                     nb_data = nb_response.json()
-                    
-                    # Handle the actual response format you showed
-                    if isinstance(nb_data, dict) and "label" in nb_data:
-                        # Direct response format
+
+                    if "label" in nb_data:
                         n = {
                             "label": nb_data["label"],
                             "score": nb_data.get("proba", 0.0),
+                            "classes": nb_data.get("classes", []),
                             "all_probabilities": nb_data.get("all_probabilities", [])
                         }
-                    elif isinstance(nb_data, list) and len(nb_data) > 0 and "label" in nb_data[0]:
-                        # List response format
-                        result = nb_data[0]
-                        n = {
-                            "label": result["label"],
-                            "score": result.get("proba", 0.0),
-                            "all_probabilities": result.get("all_probabilities", [])
-                        }
                     else:
-                        n = {"label": "error", "error": "Unexpected response format", "raw_response": nb_data}
+                        n = {
+                            "label": "error",
+                            "error": "Unexpected response format",
+                            "raw_response": nb_data
+                        }
                 else:
                     n = {"label": "error", "error": f"NB API returned {nb_response.status_code}: {nb_response.text}"}
-                    
+
             except requests.exceptions.Timeout:
                 n = {"label": "error", "error": "Naive Bayes API timeout"}
             except requests.exceptions.ConnectionError:
