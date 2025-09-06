@@ -10,8 +10,9 @@ analyzer = SentimentIntensityAnalyzer()
 HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-# Replace this with your actual Hugging Face Space URL once you create it
-NB_API_URL = "https://your-username-nb-sentiment.hf.space/api/predict"
+# Replace with your actual Hugging Face Space URL
+# Format should be: https://your-username-space-name.hf.space/predict
+NB_API_URL = "https://maksimilijankatavic-nb-sentiment-classifier.hf.space/predict"
 
 class handler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
@@ -68,25 +69,44 @@ class handler(BaseHTTPRequestHandler):
 
             # Naive Bayes via external API
             try:
+                # Updated to match HuggingFace Space API format
                 nb_response = requests.post(
                     NB_API_URL,
-                    json={"data": [truncated]},
+                    json={"data": [truncated]},  # HF Spaces typically expect this format
+                    headers={"Content-Type": "application/json"},
                     timeout=10
                 )
                 
                 if nb_response.status_code == 200:
                     nb_data = nb_response.json()
-                    if "data" in nb_data:
-                        n = json.loads(nb_data["data"][0])
+                    
+                    # Handle the actual response format you showed
+                    if isinstance(nb_data, dict) and "label" in nb_data:
+                        # Direct response format
+                        n = {
+                            "label": nb_data["label"],
+                            "score": nb_data.get("proba", 0.0),
+                            "all_probabilities": nb_data.get("all_probabilities", [])
+                        }
+                    elif isinstance(nb_data, list) and len(nb_data) > 0 and "label" in nb_data[0]:
+                        # List response format
+                        result = nb_data[0]
+                        n = {
+                            "label": result["label"],
+                            "score": result.get("proba", 0.0),
+                            "all_probabilities": result.get("all_probabilities", [])
+                        }
                     else:
-                        n = {"label": "error", "error": "Invalid response format"}
+                        n = {"label": "error", "error": "Unexpected response format", "raw_response": nb_data}
                 else:
-                    n = {"label": "error", "error": f"NB API returned {nb_response.status_code}"}
+                    n = {"label": "error", "error": f"NB API returned {nb_response.status_code}: {nb_response.text}"}
                     
             except requests.exceptions.Timeout:
                 n = {"label": "error", "error": "Naive Bayes API timeout"}
+            except requests.exceptions.ConnectionError:
+                n = {"label": "unavailable", "error": "Cannot connect to Naive Bayes API"}
             except Exception as e:
-                n = {"label": "unavailable", "error": f"NB API not configured: {str(e)}"}
+                n = {"label": "unavailable", "error": f"NB API error: {str(e)}"}
 
             # RoBERTa
             try:
@@ -109,17 +129,28 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 r_result = {"label":"unknown","score":0.0,"error": str(e)}
 
-            # Majority vote
-            labels = [v.get("label"), n.get("label"), r_result.get("label")]
-            counts = {k: labels.count(k) for k in set(labels)}
-            consensus_label, agreement = max(counts.items(), key=lambda kv: kv[1])
+            # Majority vote (only count models that actually worked)
+            working_models = []
+            if v.get("label") not in ["error", "unavailable"]:
+                working_models.append(v.get("label"))
+            if n.get("label") not in ["error", "unavailable"]:
+                working_models.append(n.get("label"))
+            if r_result.get("label") not in ["error", "unknown", "unavailable"]:
+                working_models.append(r_result.get("label"))
+
+            if working_models:
+                counts = {k: working_models.count(k) for k in set(working_models)}
+                consensus_label, agreement = max(counts.items(), key=lambda kv: kv[1])
+                consensus = {"label": consensus_label, "agreement": agreement / len(working_models)}
+            else:
+                consensus = {"label": "unknown", "agreement": 0.0}
 
             res = {
                 "ok": True,
                 "input_chars": len(text),
                 "used_chars": len(truncated),
                 "models": {"vader": v, "naive_bayes": n, "roberta": r_result},
-                "consensus": {"label": consensus_label, "agreement": agreement / max(1,len(labels))}
+                "consensus": consensus
             }
 
             self._send_response(200, res)
