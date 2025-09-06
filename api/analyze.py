@@ -5,6 +5,12 @@ import os
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
 
+# At the top of your file, add:
+from gradio_client import Client
+
+# Initialize once (outside handler class to avoid re-connecting every request)
+nb_client = Client("maksimilijankatavic/nb-sentiment-classifier")
+
 analyzer = SentimentIntensityAnalyzer()
 
 HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
@@ -67,39 +73,28 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 v = {"label": "error", "error": str(e)}
 
-            # Naive Bayes via external API
+            # Naive Bayes via Hugging Face Space (gradio_client)
             try:
-                nb_response = requests.post(
-                    NB_API_URL,
-                    json={"data": [truncated]},   # Gradio expects "data": [ ... ]
-                    headers={"Content-Type": "application/json"},
-                    timeout=10
+                result = nb_client.predict(
+                    text=truncated,
+                    api_name="/predict"
                 )
 
-
-                if nb_response.status_code == 200:
-                    nb_data = nb_response.json()
-
-                    if "label" in nb_data:
-                        n = {
-                            "label": nb_data["label"],
-                            "score": nb_data.get("proba", 0.0),
-                            "classes": nb_data.get("classes", []),
-                            "all_probabilities": nb_data.get("all_probabilities", [])
-                        }
-                    else:
-                        n = {
-                            "label": "error",
-                            "error": "Unexpected response format",
-                            "raw_response": nb_data
-                        }
+                # Expecting result like: {"label": "...", "proba": ..., "classes": [...], "all_probabilities": [...]}
+                if isinstance(result, dict) and "label" in result:
+                    n = {
+                        "label": result["label"],
+                        "score": result.get("proba", 0.0),
+                        "classes": result.get("classes", []),
+                        "all_probabilities": result.get("all_probabilities", [])
+                    }
                 else:
-                    n = {"label": "error", "error": f"NB API returned {nb_response.status_code}: {nb_response.text}"}
+                    n = {
+                        "label": "error",
+                        "error": "Unexpected NB response format",
+                        "raw_response": result
+                    }
 
-            except requests.exceptions.Timeout:
-                n = {"label": "error", "error": "Naive Bayes API timeout"}
-            except requests.exceptions.ConnectionError:
-                n = {"label": "unavailable", "error": "Cannot connect to Naive Bayes API"}
             except Exception as e:
                 n = {"label": "unavailable", "error": f"NB API error: {str(e)}"}
 
