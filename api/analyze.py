@@ -7,60 +7,11 @@ import requests
 
 analyzer = SentimentIntensityAnalyzer()
 
-# Enhanced model loading with detailed debugging
-try:
-    current_dir = os.getcwd()
-    api_dir = os.path.dirname(__file__)
-    
-    # Try multiple possible paths for the models
-    possible_paths = [
-        os.path.join(api_dir, '..', 'models'),
-        os.path.join(current_dir, 'models'),
-        os.path.join('models'),
-        os.path.join(api_dir, 'models'),
-        os.path.join(api_dir, '..', '..', 'models'),
-    ]
-    
-    nb_clf = None
-    vectorizer = None
-    debug_paths = []
-    
-    for models_dir in possible_paths:
-        nb_path = os.path.join(models_dir, 'nb-model.pkl')
-        vec_path = os.path.join(models_dir, 'nb-vectorizer.pkl')
-        
-        debug_paths.append({
-            "models_dir": models_dir,
-            "nb_path": nb_path,
-            "vec_path": vec_path,
-            "nb_exists": os.path.exists(nb_path),
-            "vec_exists": os.path.exists(vec_path),
-            "dir_exists": os.path.exists(models_dir),
-            "dir_contents": glob.glob(os.path.join(models_dir, '*')) if os.path.exists(models_dir) else []
-        })
-        
-        if os.path.exists(nb_path) and os.path.exists(vec_path):
-            nb_clf = joblib.load(nb_path)
-            vectorizer = joblib.load(vec_path)
-            break
-    
-    # Store debug info for later use
-    model_debug_info = {
-        "current_dir": current_dir,
-        "api_dir": api_dir,
-        "paths_tried": debug_paths,
-        "models_loaded": nb_clf is not None and vectorizer is not None,
-        "root_contents": glob.glob(os.path.join(current_dir, '*')),
-        "api_parent_contents": glob.glob(os.path.join(api_dir, '..', '*')) if os.path.exists(os.path.join(api_dir, '..')) else []
-    }
-            
-except Exception as e:
-    nb_clf = None
-    vectorizer = None
-    model_debug_info = {"loading_error": str(e)}
-
 HF_API_URL = "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
+
+# Replace this with your actual Hugging Face Space URL once you create it
+NB_API_URL = "https://your-username-nb-sentiment.hf.space/api/predict"
 
 class handler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
@@ -115,27 +66,27 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 v = {"label": "error", "error": str(e)}
 
-            # Naive Bayes with enhanced debugging
+            # Naive Bayes via external API
             try:
-                if nb_clf and vectorizer:
-                    X = vectorizer.transform([truncated])
-                    if hasattr(nb_clf, "predict_proba"):
-                        proba = nb_clf.predict_proba(X)[0]
-                        classes = [str(c) for c in getattr(nb_clf, "classes_", ["negative","positive"])]
-                        idx = max(range(len(proba)), key=lambda i: proba[i])
-                        n = {
-                            "label": classes[idx], 
-                            "proba": float(proba[idx]), 
-                            "classes": classes,
-                            "all_probabilities": [float(p) for p in proba]
-                        }
+                nb_response = requests.post(
+                    NB_API_URL,
+                    json={"data": [truncated]},
+                    timeout=10
+                )
+                
+                if nb_response.status_code == 200:
+                    nb_data = nb_response.json()
+                    if "data" in nb_data:
+                        n = json.loads(nb_data["data"][0])
                     else:
-                        prediction = nb_clf.predict(X)[0]
-                        n = {"label": str(prediction)}
+                        n = {"label": "error", "error": "Invalid response format"}
                 else:
-                    n = {"label": "unavailable", "error": "Naive Bayes model not found", "debug": model_debug_info}
+                    n = {"label": "error", "error": f"NB API returned {nb_response.status_code}"}
+                    
+            except requests.exceptions.Timeout:
+                n = {"label": "error", "error": "Naive Bayes API timeout"}
             except Exception as e:
-                n = {"label": "error", "error": str(e)}
+                n = {"label": "unavailable", "error": f"NB API not configured: {str(e)}"}
 
             # RoBERTa
             try:
