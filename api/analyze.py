@@ -2,9 +2,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
-import glob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import joblib
 import requests
 
 analyzer = SentimentIntensityAnalyzer()
