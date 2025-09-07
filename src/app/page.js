@@ -70,6 +70,11 @@ export default function Home() {
                 disabled={loading}
                 aria-label="Text to analyze"
                 rows={1}
+                style={{
+                  fieldSizing: 'content',
+                  height: 'auto',
+                  minHeight: '1.5rem'
+                }}
               />
               <div className="absolute top-1/2 right-6 -translate-y-1/2">
                 <Button 
