@@ -70,7 +70,7 @@ export default function Home() {
                 disabled={loading}
                 aria-label="Text to analyze"
               />
-              <div className="absolute right-6 -translate-y-1/2">
+              <div className="absolute top-1/2 right-6 -translate-y-1/2">
                 <Button 
                   type="submit"
                   disabled={loading || !inputValue.trim()} 
