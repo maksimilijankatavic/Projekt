@@ -45,10 +45,18 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className={`transition-all duration-1000 ease-out ${
+      isLoaded 
+        ? 'opacity-100 translate-y-0' 
+        : 'opacity-0 translate-y-8'
+    }`}>
       <Header />
       <main className="px-6 py-12 max-w-4xl mx-auto">
-        <div className="mb-12">
+        <div className={`mb-12 transition-all duration-1000 ease-out delay-200 ${
+          isLoaded 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-8'
+        }`}>
           <h1 className="text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
               Let's get started.
@@ -57,7 +65,11 @@ export default function Home() {
           <p className="text-4xl text-gray-400">What text would you like to analyze?</p>
         </div>
         
-        <div className="mb-12">
+        <div className={`mb-12 transition-all duration-1000 ease-out delay-400 ${
+          isLoaded 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-8'
+        }`}>
           <h2 className="text-lg text-gray-400 mb-4">Analyze text with AI</h2>
           
           <form onSubmit={handleSubmit} className="mb-6">
@@ -85,13 +97,17 @@ export default function Home() {
         </div>
 
         {error && (
-          <div className="mb-4">
+          <div className={`mb-4 transition-all duration-500 ease-out ${
+            error ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
             <p className="text-red-500" role="alert">{error}</p>
           </div>
         )}
 
         {data && (
-          <div className="space-y-4">
+          <div className={`space-y-4 transition-all duration-500 ease-out ${
+            data ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
             <h3 className="text-xl font-semibold text-gray-300">Analysis Results:</h3>
             <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
               {JSON.stringify(data, null, 2)}
