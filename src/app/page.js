@@ -69,7 +69,6 @@ export default function Home() {
                 placeholder="Type anything"
                 disabled={loading}
                 aria-label="Text to analyze"
-                rows={1} // Start with just 1 row
               />
               <div className="absolute top-1/2 right-6 -translate-y-1/2">
                 <Button 
