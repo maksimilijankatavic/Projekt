@@ -6,7 +6,7 @@ import Header from "@/components/shared/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 
 export default function Home() {
   const inputValue = useRef("");
@@ -16,6 +16,12 @@ export default function Home() {
   
   const handleChange = (e) => {
     inputValue.current = e.target.value;
+  }
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      submit();
+    }
   }
 
   const submit = async () => {
@@ -56,7 +62,7 @@ export default function Home() {
             <div className="relative bg-orange-500/5 backdrop-blur-sm rounded-xl p-6 focus-within:bg-orange-500/8">
               <Input onChange={handleChange} className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0" placeholder="Type anything" /> {/* Iz nekog razloga ne radi bez ! uz text-lg. */}
               <div className="absolute bottom-6 right-6">
-                <Button onClick={submit} disabled={loading} className="cursor-pointer text-gray-400 bg-orange-500/5 hover:text-orange-400 hover:bg-orange-500/10" aria-label="submit">
+                <Button onClick={submit} onKeyDown={handleKeyDown} disabled={loading} className="cursor-pointer text-gray-400 bg-orange-500/5 hover:text-orange-400 hover:bg-orange-500/10" aria-label="submit">
                   {loading ? "..." : <CircleArrowUp />}
                 </Button>
               </div>
