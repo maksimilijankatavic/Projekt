@@ -3,7 +3,7 @@
 "use client"; {/* Bez ovog hook-ovi ne rade. */}
 
 import Header from "@/components/shared/Header";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Changed from input to textarea
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
 import { useState } from "react";
@@ -62,13 +62,14 @@ export default function Home() {
           
           <form onSubmit={handleSubmit} className="mb-6">
             <div className="relative bg-orange-500/5 backdrop-blur-sm rounded-xl p-6 focus-within:bg-orange-500/8">
-              <Input 
+              <Textarea 
                 value={inputValue}
                 onChange={handleChange} 
-                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0" 
+                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0 resize-none min-h-[60px]" 
                 placeholder="Type anything"
                 disabled={loading}
                 aria-label="Text to analyze"
+                rows={3} // Set initial number of rows
               />
               <div className="absolute bottom-6 right-6">
                 <Button 
