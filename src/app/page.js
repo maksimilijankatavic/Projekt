@@ -69,7 +69,7 @@ export default function Home() {
                 placeholder="Type anything"
                 disabled={loading}
                 aria-label="Text to analyze"
-                rows={3} // Set initial number of rows
+                rows={1} // Set initial number of rows
               />
               <div className="absolute bottom-6 right-6">
                 <Button 
