@@ -65,7 +65,7 @@ export default function Home() {
               <Textarea 
                 value={inputValue}
                 onChange={handleChange} 
-                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0 resize-none min-h-[60px]" 
+                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0 pr-16 resize-none min-h-[60px]" 
                 placeholder="Type anything"
                 disabled={loading}
                 aria-label="Text to analyze"
