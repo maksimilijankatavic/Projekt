@@ -9,7 +9,7 @@ export default function Header() {
             <div className="flex items-center gap-3">
                 <Image src="/images/icon.png" alt="logo" width={32} height={32} priority={true} />
                 <span className="text-2xl font-medium text-gray-300">SentimentLab</span>
-                <Badge variant="outline" className="hidden text-gray-300 border-gray-600/30">PREVIEW</Badge>
+                <Badge variant="outline" className="hidden sm:inline-flex text-gray-300 border-gray-600/30">PREVIEW</Badge>
             </div>
 
             <div className="flex items-center">
