@@ -18,8 +18,8 @@ export default function Home() {
     inputValue.current = e.target.value;
   }
 
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter") {
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
       submit();
     }
   }
@@ -60,9 +60,9 @@ export default function Home() {
           <h2 className="text-lg text-gray-400 mb-4">Analyze text with AI</h2>
           <div className="relative mb-6">
             <div className="relative bg-orange-500/5 backdrop-blur-sm rounded-xl p-6 focus-within:bg-orange-500/8">
-              <Input onChange={handleChange} className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0" placeholder="Type anything" /> {/* Iz nekog razloga ne radi bez ! uz text-lg. */}
+              <Input onChange={handleChange} onKeyDown={handleKeyDown} className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0" placeholder="Type anything" /> {/* Iz nekog razloga ne radi bez ! uz text-lg. */}
               <div className="absolute bottom-6 right-6">
-                <Button onClick={submit} onKeyDown={handleKeyDown} disabled={loading} className="cursor-pointer text-gray-400 bg-orange-500/5 hover:text-orange-400 hover:bg-orange-500/10" aria-label="submit">
+                <Button onClick={submit} disabled={loading} className="cursor-pointer text-gray-400 bg-orange-500/5 hover:text-orange-400 hover:bg-orange-500/10" aria-label="submit">
                   {loading ? "..." : <CircleArrowUp />}
                 </Button>
               </div>
