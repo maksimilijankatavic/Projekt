@@ -65,11 +65,11 @@ export default function Home() {
               <Textarea 
                 value={inputValue}
                 onChange={handleChange} 
-                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0 pr-16 resize-none"
+                className="bg-transparent border-none !text-lg text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 p-0 pr-16 resize-none" 
                 placeholder="Type anything"
                 disabled={loading}
                 aria-label="Text to analyze"
-                rows={1}
+                rows={1} // Start with just 1 row
               />
               <div className="absolute top-1/2 right-6 -translate-y-1/2">
                 <Button 
