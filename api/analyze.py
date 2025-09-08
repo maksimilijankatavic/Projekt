@@ -63,91 +63,46 @@ class handler(BaseHTTPRequestHandler):
 
             # VADER sentiment
             try:
-                s = analyzer.polarity_scores(truncated)
-                if s["compound"] >= 0.05:
-                    v = {"label": "positive", "compound": s["compound"], "raw": s}
-                elif s["compound"] <= -0.05:
-                    v = {"label": "negative", "compound": s["compound"], "raw": s}
-                else:
-                    v = {"label": "neutral", "compound": s["compound"], "raw": s}
+                vader_result = analyzer.polarity_scores(truncated)
             except Exception as e:
-                v = {"label": "error", "error": str(e)}
+                vader_result = {"error": str(e)}
 
             # Naive Bayes via Hugging Face Space (gradio_client)
             try:
-                result = nb_client.predict(
+                naive_bayes_result = nb_client.predict(
                     text=truncated,
                     api_name="/predict"
                 )
 
                 # If the result comes back as a string, try parsing JSON
-                if isinstance(result, str):
+                if isinstance(naive_bayes_result, str):
                     try:
-                        result = json.loads(result)
+                        naive_bayes_result = json.loads(naive_bayes_result)
                     except json.JSONDecodeError:
-                        n = {"label": "error", "error": "NB returned non-JSON string", "raw_response": result}
-                        result = None
-
-                if isinstance(result, dict) and "label" in result:
-                    n = {
-                        "label": result["label"],
-                        "score": result.get("proba", 0.0),
-                        "classes": result.get("classes", []),
-                        "all_probabilities": result.get("all_probabilities", [])
-                    }
-                else:
-                    n = {
-                        "label": "error",
-                        "error": "Unexpected NB response format",
-                        "raw_response": result
-                    }
+                        # Keep the string as is if it can't be parsed
+                        pass
 
             except Exception as e:
-                n = {"label": "unavailable", "error": f"NB API error: {str(e)}"}
+                naive_bayes_result = {"error": str(e)}
 
             # RoBERTa
             try:
                 headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
                 r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=5)
                 r.raise_for_status()
-                data = r.json()
-                if isinstance(data, dict) and "error" in data:
-                    r_result = {"label": "unknown", "score": 0.0, "error": data["error"]}
-                else:
-                    candidates = data[0] if isinstance(data, list) else data
-                    if isinstance(candidates, list) and candidates and "label" in candidates[0]:
-                        best = max(candidates, key=lambda c: c.get("score",0))
-                        mapping = {"LABEL_0":"negative","LABEL_1":"neutral","LABEL_2":"positive"}
-                        r_result = {"label": mapping.get(best["label"], best["label"].lower()), "score": float(best["score"])}
-                    else:
-                        r_result = {"label": "unknown", "score": 0.0}
+                roberta_result = r.json()
             except requests.exceptions.Timeout:
-                r_result = {"label":"unknown","score":0.0,"error": "HuggingFace API timeout"}
+                roberta_result = {"error": "HuggingFace API timeout"}
             except Exception as e:
-                r_result = {"label":"unknown","score":0.0,"error": str(e)}
-
-            # Majority vote (only count models that actually worked)
-            working_models = []
-            if v.get("label") not in ["error", "unavailable"]:
-                working_models.append(v.get("label"))
-            if n.get("label") not in ["error", "unavailable"]:
-                working_models.append(n.get("label"))
-            if r_result.get("label") not in ["error", "unknown", "unavailable"]:
-                working_models.append(r_result.get("label"))
-
-            if working_models:
-                counts = {k: working_models.count(k) for k in set(working_models)}
-                consensus_label, agreement = max(counts.items(), key=lambda kv: kv[1])
-                consensus = {"label": consensus_label, "agreement": agreement / len(working_models)}
-            else:
-                consensus = {"label": "unknown", "agreement": 0.0}
+                roberta_result = {"error": str(e)}
 
             res = {
                 "ok": True,
                 "input_chars": len(text),
                 "used_chars": len(truncated),
-                "models": {"vader": v, "naive_bayes": n, "roberta": r_result},
-                "consensus": consensus
+                "vader": vader_result,
+                "naive_bayes": naive_bayes_result,
+                "roberta": roberta_result
             }
 
             self._send_response(200, res)
