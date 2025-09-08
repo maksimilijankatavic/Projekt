@@ -32,7 +32,7 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        self._send_response(405, {"ok": False, "error": "GET not allowed"})
+        self._send_response(405, {"error": "GET not allowed"})
 
     def do_POST(self):
         try:
@@ -42,12 +42,12 @@ class handler(BaseHTTPRequestHandler):
             try:
                 payload = json.loads(post_data.decode('utf-8')) if post_data else {}
             except json.JSONDecodeError:
-                self._send_response(400, {"ok": False, "error": "Invalid JSON"})
+                self._send_response(400, {"error": "Invalid JSON"})
                 return
             
             text = (payload.get("text") or "").strip()
             if not text:
-                self._send_response(400, {"ok": False, "error": "Missing 'text'"})
+                self._send_response(400, {"error": "Missing 'text'"})
                 return
 
             truncated = text[:2048]
@@ -139,9 +139,6 @@ class handler(BaseHTTPRequestHandler):
                 roberta_result = {"error": str(e)}
 
             self._send_response(200, {
-                "ok": True,
-                "input_chars": len(text),
-                "used_chars": len(truncated),
                 "vader": vader_result,
                 "naive_bayes": naive_bayes_result,
                 "roberta": roberta_result
