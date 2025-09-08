@@ -139,35 +139,46 @@ class handler(BaseHTTPRequestHandler):
                 roberta_result = {"error": str(e)}
 
             # Generate conclusion
-            model_votes = []
             model_results = {
                 "vader": vader_result.get("sentiment", "error"),
                 "naive_bayes": naive_bayes_result.get("sentiment", "error"),
                 "roberta": roberta_result.get("sentiment", "error")
             }
             
-            # Count valid votes (exclude errors)
+            # Group models by their sentiment choice
+            sentiment_groups = {
+                "positive": [],
+                "negative": [],
+                "neutral": []
+            }
+            
             valid_votes = {sentiment: 0 for sentiment in ["positive", "negative", "neutral"]}
+            
             for model, sentiment in model_results.items():
-                if sentiment in valid_votes:
+                if sentiment in sentiment_groups:
+                    sentiment_groups[sentiment].append(model)
                     valid_votes[sentiment] += 1
-                    model_votes.append(sentiment)
             
             # Determine final decision
-            if model_votes:
+            total_valid_votes = sum(valid_votes.values())
+            if total_valid_votes > 0:
                 final_sentiment = max(valid_votes, key=valid_votes.get)
                 # If there's a tie, prioritize in order: negative, positive, neutral
-                if valid_votes[final_sentiment] == 1 and len(model_votes) > 1:
-                    if "negative" in model_votes:
+                max_votes = valid_votes[final_sentiment]
+                tied_sentiments = [s for s, count in valid_votes.items() if count == max_votes]
+                if len(tied_sentiments) > 1:
+                    if "negative" in tied_sentiments:
                         final_sentiment = "negative"
-                    elif "positive" in model_votes:
+                    elif "positive" in tied_sentiments:
                         final_sentiment = "positive"
             else:
                 final_sentiment = "error"
             
             conclusion = {
                 "final_sentiment": final_sentiment,
-                "model_votes": model_results
+                "positive": sentiment_groups["positive"],
+                "negative": sentiment_groups["negative"],
+                "neutral": sentiment_groups["neutral"]
             }
 
             self._send_response(200, {
