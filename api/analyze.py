@@ -138,10 +138,43 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 roberta_result = {"error": str(e)}
 
+            # Generate conclusion
+            model_votes = []
+            model_results = {
+                "vader": vader_result.get("sentiment", "error"),
+                "naive_bayes": naive_bayes_result.get("sentiment", "error"),
+                "roberta": roberta_result.get("sentiment", "error")
+            }
+            
+            # Count valid votes (exclude errors)
+            valid_votes = {sentiment: 0 for sentiment in ["positive", "negative", "neutral"]}
+            for model, sentiment in model_results.items():
+                if sentiment in valid_votes:
+                    valid_votes[sentiment] += 1
+                    model_votes.append(sentiment)
+            
+            # Determine final decision
+            if model_votes:
+                final_sentiment = max(valid_votes, key=valid_votes.get)
+                # If there's a tie, prioritize in order: negative, positive, neutral
+                if valid_votes[final_sentiment] == 1 and len(model_votes) > 1:
+                    if "negative" in model_votes:
+                        final_sentiment = "negative"
+                    elif "positive" in model_votes:
+                        final_sentiment = "positive"
+            else:
+                final_sentiment = "error"
+            
+            conclusion = {
+                "final_sentiment": final_sentiment,
+                "model_votes": model_results
+            }
+
             self._send_response(200, {
                 "vader": vader_result,
                 "naive_bayes": naive_bayes_result,
-                "roberta": roberta_result
+                "roberta": roberta_result,
+                "conclusion": conclusion
             })
 
         except Exception as e:
