@@ -148,4 +148,4 @@ class handler(BaseHTTPRequestHandler):
             })
 
         except Exception as e:
-            self._send_response(500, {"ok": False, "error": str(e)})
+            self._send_response(500, {"error": str(e)})
