@@ -4,21 +4,14 @@ import json
 import os
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
-
-# At the top of your file, add:
 from gradio_client import Client
 
-# Initialize once (outside handler class to avoid re-connecting every request)
+# Initialize clients once
 nb_client = Client("maksimilijankatavic/nb-sentiment-classifier")
-
 analyzer = SentimentIntensityAnalyzer()
 
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/cardiffnlp/twitter-roberta-base-sentiment"
 HF_TOKEN = os.environ.get("HF_TOKEN")
-
-# Replace with your actual Hugging Face Space URL
-# Format should be: https://your-username-space-name.hf.space/predict
-NB_API_URL = "https://maksimilijankatavic-nb-sentiment-classifier.hf.space/run/predict"
 
 class handler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
@@ -43,11 +36,9 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            # Read request body
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
-            # Parse JSON
             try:
                 payload = json.loads(post_data.decode('utf-8')) if post_data else {}
             except json.JSONDecodeError:
@@ -67,45 +58,36 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 vader_result = {"error": str(e)}
 
-            # Naive Bayes via Hugging Face Space (gradio_client)
+            # Naive Bayes
             try:
-                naive_bayes_result = nb_client.predict(
-                    text=truncated,
-                    api_name="/predict"
-                )
-
-                # If the result comes back as a string, try parsing JSON
+                naive_bayes_result = nb_client.predict(text=truncated, api_name="/predict")
                 if isinstance(naive_bayes_result, str):
                     try:
                         naive_bayes_result = json.loads(naive_bayes_result)
                     except json.JSONDecodeError:
-                        # Keep the string as is if it can't be parsed
                         pass
-
             except Exception as e:
                 naive_bayes_result = {"error": str(e)}
 
             # RoBERTa
             try:
                 headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-                r = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=5)
-                r.raise_for_status()
-                roberta_result = r.json()
+                response = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=5)
+                response.raise_for_status()
+                roberta_result = response.json()
             except requests.exceptions.Timeout:
                 roberta_result = {"error": "HuggingFace API timeout"}
             except Exception as e:
                 roberta_result = {"error": str(e)}
 
-            res = {
+            self._send_response(200, {
                 "ok": True,
                 "input_chars": len(text),
                 "used_chars": len(truncated),
                 "vader": vader_result,
                 "naive_bayes": naive_bayes_result,
                 "roberta": roberta_result
-            }
-
-            self._send_response(200, res)
+            })
 
         except Exception as e:
             self._send_response(500, {"ok": False, "error": str(e)})
