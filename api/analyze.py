@@ -54,18 +54,43 @@ class handler(BaseHTTPRequestHandler):
 
             # VADER sentiment
             try:
-                vader_result = analyzer.polarity_scores(truncated)
+                vader_raw = analyzer.polarity_scores(truncated)
+                if vader_raw["compound"] >= 0.05:
+                    vader_sentiment = "positive"
+                elif vader_raw["compound"] <= -0.05:
+                    vader_sentiment = "negative"
+                else:
+                    vader_sentiment = "neutral"
+                
+                vader_result = {
+                    "negative": vader_raw["neg"],
+                    "neutral": vader_raw["neu"],
+                    "positive": vader_raw["pos"],
+                    "compound": vader_raw["compound"],
+                    "sentiment": vader_sentiment
+                }
             except Exception as e:
                 vader_result = {"error": str(e)}
 
             # Naive Bayes
             try:
-                naive_bayes_result = nb_client.predict(text=truncated, api_name="/predict")
-                if isinstance(naive_bayes_result, str):
+                nb_raw = nb_client.predict(text=truncated, api_name="/predict")
+                if isinstance(nb_raw, str):
                     try:
-                        naive_bayes_result = json.loads(naive_bayes_result)
+                        nb_raw = json.loads(nb_raw)
                     except json.JSONDecodeError:
                         pass
+                
+                if isinstance(nb_raw, dict) and "all_probabilities" in nb_raw:
+                    probs = nb_raw["all_probabilities"]
+                    naive_bayes_result = {
+                        "negative": probs[0] if len(probs) > 0 else 0.0,
+                        "neutral": probs[1] if len(probs) > 1 else 0.0,
+                        "positive": probs[2] if len(probs) > 2 else 0.0,
+                        "sentiment": nb_raw.get("label", "unknown")
+                    }
+                else:
+                    naive_bayes_result = {"error": "Unexpected response format"}
             except Exception as e:
                 naive_bayes_result = {"error": str(e)}
 
@@ -74,7 +99,40 @@ class handler(BaseHTTPRequestHandler):
                 headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
                 response = requests.post(HF_API_URL, headers=headers, json={"inputs": truncated}, timeout=5)
                 response.raise_for_status()
-                roberta_result = response.json()
+                roberta_raw = response.json()
+                
+                if isinstance(roberta_raw, list) and len(roberta_raw) > 0:
+                    scores = roberta_raw[0]
+                    label_mapping = {"LABEL_0": "negative", "LABEL_1": "neutral", "LABEL_2": "positive"}
+                    
+                    # Initialize scores
+                    neg_score = neu_score = pos_score = 0.0
+                    best_sentiment = "unknown"
+                    best_score = 0.0
+                    
+                    for item in scores:
+                        label = label_mapping.get(item["label"], item["label"])
+                        score = item["score"]
+                        
+                        if label == "negative":
+                            neg_score = score
+                        elif label == "neutral":
+                            neu_score = score
+                        elif label == "positive":
+                            pos_score = score
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_sentiment = label
+                    
+                    roberta_result = {
+                        "negative": neg_score,
+                        "neutral": neu_score,
+                        "positive": pos_score,
+                        "sentiment": best_sentiment
+                    }
+                else:
+                    roberta_result = {"error": "Unexpected response format"}
             except requests.exceptions.Timeout:
                 roberta_result = {"error": "HuggingFace API timeout"}
             except Exception as e:
