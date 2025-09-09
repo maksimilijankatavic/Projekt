@@ -268,7 +268,7 @@ const SentimentResults = ({ data }) => {
                 <PolarGrid strokeOpacity={0.2} />
                 <PolarAngleAxis dataKey="sentiment" stroke="#9ca3af" />
                 <PolarRadiusAxis
-                  tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                  tick={false}
                   stroke="#9ca3af"
                 />
                 <Radar
