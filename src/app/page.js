@@ -3,7 +3,7 @@
 "use client"; {/* Bez ovog hook-ovi ne rade. */}
 
 import Header from "@/components/shared/Header";
-import SentimentResults from "@/components/SentimentResults"; // Add this import
+import SentimentResults from "@/components/shared/SentimentResults"; // Add this import
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
