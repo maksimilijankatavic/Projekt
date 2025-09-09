@@ -3,7 +3,8 @@
 "use client"; {/* Bez ovog hook-ovi ne rade. */}
 
 import Header from "@/components/shared/Header";
-import { Textarea } from "@/components/ui/textarea"; // Changed from input to textarea
+import SentimentResults from "@/components/SentimentResults"; // Add this import
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
 import { useState } from "react";
@@ -47,7 +48,7 @@ export default function Home() {
   return (
     <div>
       <Header />
-      <main className="px-6 py-12 max-w-4xl mx-auto">
+      <main className="px-6 py-12 max-w-6xl mx-auto">
         <div className="mb-12">
           <h1 className="text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
@@ -86,17 +87,20 @@ export default function Home() {
         </div>
 
         {error && (
-          <div className="mb-4">
-            <p className="text-red-500" role="alert">{error}</p>
+          <div className="mb-6">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+              <p className="text-red-400" role="alert">{error}</p>
+            </div>
           </div>
         )}
 
         {data && (
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-gray-300">Analysis Results:</h3>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
-              {JSON.stringify(data, null, 2)}
-            </pre>
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-gray-300 mb-2">Analysis Results</h3>
+              <p className="text-gray-400">Comprehensive sentiment analysis from multiple AI models</p>
+            </div>
+            <SentimentResults data={data} />
           </div>
         )}
       </main>
