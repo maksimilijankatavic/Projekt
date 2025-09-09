@@ -116,9 +116,7 @@ const SentimentResults = ({ data }) => {
     <div className="space-y-6 [&_.card]:bg-gray-900/40 [&_.card]:backdrop-blur-sm [&_.card]:border [&_.card]:border-gray-800/60 [&_.card]:rounded-2xl [&_.card]:shadow-lg">
       {/* Final Result Card */}
       <Card
-        style={{
-          borderColor: getSentimentColor(data.conclusion?.final_sentiment),
-        }}
+      className="bg-gray-900/40 backdrop-blur-sm border border-gray-800/60 rounded-2xl shadow-lg"
       >
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center gap-2 text-gray-200">
