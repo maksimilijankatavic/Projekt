@@ -266,6 +266,13 @@ const SentimentResults = ({ data }) => {
               <RadarChart data={radarData}>
                 <PolarGrid strokeOpacity={0.2} />
                 <PolarAngleAxis dataKey="sentiment" stroke="#9ca3af" />
+                <PolarRadiusAxis 
+                  angle={30} 
+                  domain={[0, 1]} 
+                  tickFormatter={(value) => `${value * 100}%`} 
+                  stroke="#9ca3af"
+                  tick={{ fill: "#9ca3af" }}
+                />
                 <Radar
                   name="VADER"
                   dataKey="VADER"
