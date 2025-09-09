@@ -270,9 +270,8 @@ const SentimentResults = ({ data }) => {
                 <PolarRadiusAxis 
                   angle={30} 
                   domain={[0, 1]} 
-                  tickFormatter={(value) => `${value * 100}%`} 
-                  stroke="#9ca3af"
-                  tick={{ fill: "#9ca3af" }}
+                  tick={false}
+                  axisLine={false}
                 />
                 <Radar
                   name="VADER"
