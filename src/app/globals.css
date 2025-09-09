@@ -124,3 +124,12 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* Remove white focus outline on Recharts charts */
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-pie:focus,
+.recharts-radar:focus,
+.recharts-bar:focus {
+  outline: none !important;
+}
