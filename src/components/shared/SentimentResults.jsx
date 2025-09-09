@@ -21,7 +21,6 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
   Radar,
 } from "recharts";
 
@@ -267,10 +266,6 @@ const SentimentResults = ({ data }) => {
               <RadarChart data={radarData}>
                 <PolarGrid strokeOpacity={0.2} />
                 <PolarAngleAxis dataKey="sentiment" stroke="#9ca3af" />
-                <PolarRadiusAxis
-                  tick={false}
-                  stroke="#9ca3af"
-                />
                 <Radar
                   name="VADER"
                   dataKey="VADER"
