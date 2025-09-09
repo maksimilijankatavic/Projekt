@@ -18,6 +18,16 @@ const getSentimentColor = (sentiment) => SENTIMENT_COLORS[sentiment] || '#6b7280
 // Helper function to format confidence scores
 const formatScore = (score) => (score * 100).toFixed(1);
 
+// Helper function to get proper model names
+const getModelDisplayName = (modelKey) => {
+  const modelNames = {
+    'vader': 'VADER',
+    'naive_bayes': 'Naive Bayes',
+    'roberta': 'RoBERTa'
+  };
+  return modelNames[modelKey] || modelKey;
+};
+
 const SentimentResults = ({ data }) => {
   if (!data) return null;
 
@@ -302,23 +312,7 @@ const SentimentResults = ({ data }) => {
                 <div className="mt-2 flex flex-wrap gap-1 justify-center">
                   {data.conclusion.positive.map((model, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
-                      {model}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: `${SENTIMENT_COLORS.negative}10` }}>
-              <div className="text-2xl font-bold" style={{ color: SENTIMENT_COLORS.negative }}>
-                {data.conclusion?.negative?.length || 0}
-              </div>
-              <div className="text-sm text-muted-foreground">Voted Negative</div>
-              {data.conclusion?.negative?.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1 justify-center">
-                  {data.conclusion.negative.map((model, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {model}
+                      {getModelDisplayName(model)}
                     </Badge>
                   ))}
                 </div>
@@ -334,7 +328,23 @@ const SentimentResults = ({ data }) => {
                 <div className="mt-2 flex flex-wrap gap-1 justify-center">
                   {data.conclusion.neutral.map((model, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
-                      {model}
+                      {getModelDisplayName(model)}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: `${SENTIMENT_COLORS.negative}10` }}>
+              <div className="text-2xl font-bold" style={{ color: SENTIMENT_COLORS.negative }}>
+                {data.conclusion?.negative?.length || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">Voted Negative</div>
+              {data.conclusion?.negative?.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1 justify-center">
+                  {data.conclusion.negative.map((model, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {getModelDisplayName(model)}
                     </Badge>
                   ))}
                 </div>
