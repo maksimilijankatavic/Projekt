@@ -7,13 +7,15 @@ import SentimentResults from "@/components/shared/SentimentResults"; // Add this
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+
+  const sentimentRef = useRef(null);
   
   const handleChange = (e) => {
     setInputValue(e.target.value);
@@ -44,6 +46,12 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (data && sentimentRef.current) {
+      sentimentRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [data]);
 
   return (
     <div>
@@ -95,7 +103,7 @@ export default function Home() {
         )}
 
         {data && (
-          <div className="space-y-6">
+          <div ref={sentimentRef} className="space-y-6">
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-gray-300 mb-2">Analysis Results</h3>
               <p className="text-gray-400">Comprehensive sentiment analysis from multiple AI models</p>
