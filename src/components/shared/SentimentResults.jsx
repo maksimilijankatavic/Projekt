@@ -229,7 +229,7 @@ const SentimentResults = ({ data }) => {
                   stroke="#9ca3af"
                   tick={{ fill: '#9ca3af' }}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} cursor={false} />
                 <Bar
                   dataKey="positive"
                   fill={SENTIMENT_COLORS.positive}
