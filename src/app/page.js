@@ -66,7 +66,7 @@ export default function Home() {
           <p className="text-4xl text-gray-400">What text would you like to analyze?</p>
         </div>
         
-        <div className="mb-12">
+        <div>
           <h2 className="text-lg text-gray-400 mb-4">Analyze text with AI</h2>
           
           <form onSubmit={handleSubmit} className="mb-6">
@@ -103,7 +103,7 @@ export default function Home() {
         )}
 
         {data && (
-          <div ref={sentimentRef} className="space-y-6">
+          <div ref={sentimentRef} className="space-y-6 mt-6">
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-gray-300 mb-2">Analysis Results</h3>
               <p className="text-gray-400">Comprehensive sentiment analysis from multiple AI models</p>
