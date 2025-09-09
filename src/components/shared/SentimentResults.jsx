@@ -282,12 +282,12 @@ const SentimentResults = ({ data }) => {
                   <span>{formatScore(data.roberta?.positive || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-red-500">Negative:</span>
-                  <span>{formatScore(data.roberta?.negative || 0)}%</span>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-gray-500">Neutral:</span>
                   <span>{formatScore(data.roberta?.neutral || 0)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-red-500">Negative:</span>
+                  <span>{formatScore(data.roberta?.negative || 0)}%</span>
                 </div>
               </>
             )}
