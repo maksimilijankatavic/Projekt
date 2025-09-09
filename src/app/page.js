@@ -103,7 +103,7 @@ export default function Home() {
         )}
 
         {data && (
-          <div ref={sentimentRef} className="space-y-6 pt-12">
+          <div ref={sentimentRef} className="space-y-6 pt-6">
             <div className="mb-6">
               <h3 className="text-2xl font-bold text-gray-300 mb-2">Analysis Results</h3>
               <p className="text-gray-400">Comprehensive sentiment analysis from multiple AI models</p>
