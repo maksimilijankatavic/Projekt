@@ -66,7 +66,7 @@ export default function Home() {
           <p className="text-4xl text-gray-400">What text would you like to analyze?</p>
         </div>
         
-        <div className="mb-12">
+        <div>
           <h2 className="text-lg text-gray-400 mb-4">Analyze text with AI</h2>
           
           <form onSubmit={handleSubmit} className="mb-6">
@@ -95,7 +95,7 @@ export default function Home() {
         </div>
 
         {error && (
-          <div className="mb-6">
+          <div className="mb-6 pt-12">
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
               <p className="text-red-400" role="alert">{error}</p>
             </div>
