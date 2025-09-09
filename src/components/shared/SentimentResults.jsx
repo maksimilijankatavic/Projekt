@@ -1,39 +1,19 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  Legend
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
-// Chart configuration - shadcn/ui style
-const chartConfig = {
-  positive: {
-    label: "Positive",
-    color: "hsl(142, 76%, 36%)", // emerald-600
-  },
-  neutral: {
-    label: "Neutral", 
-    color: "hsl(215, 20%, 65%)", // slate-400
-  },
-  negative: {
-    label: "Negative",
-    color: "hsl(0, 84%, 60%)", // red-500
-  },
-  vader: {
-    label: "VADER",
-    color: "hsl(24, 95%, 53%)", // orange-500
-  },
-  naive_bayes: {
-    label: "Naive Bayes", 
-    color: "hsl(221, 83%, 53%)", // blue-500
-  },
-  roberta: {
-    label: "RoBERTa",
-    color: "hsl(262, 83%, 58%)", // violet-500
-  }
+// Color scheme for sentiments
+const SENTIMENT_COLORS = {
+  positive: '#10b981', // green
+  negative: '#ef4444', // red
+  neutral: '#6b7280',  // gray
 };
+
+const CHART_COLORS = ['#f97316', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444'];
+
+// Helper function to get sentiment color
+const getSentimentColor = (sentiment) => SENTIMENT_COLORS[sentiment] || '#6b7280';
 
 // Helper function to format confidence scores
 const formatScore = (score) => (score * 100).toFixed(1);
@@ -42,39 +22,10 @@ const formatScore = (score) => (score * 100).toFixed(1);
 const getModelDisplayName = (modelKey) => {
   const modelNames = {
     'vader': 'VADER',
-    'naive_bayes': 'Naive Bayes', 
+    'naive_bayes': 'Naive Bayes',
     'roberta': 'RoBERTa'
   };
   return modelNames[modelKey] || modelKey;
-};
-
-// Custom tooltip component
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-lg border bg-background p-2 shadow-sm">
-        <div className="grid gap-2">
-          <div className="flex flex-col">
-            <span className="text-[0.70rem] uppercase text-muted-foreground">
-              {label}
-            </span>
-            {payload.map((entry, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div 
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {entry.name}: {typeof entry.value === 'number' ? formatScore(entry.value) : entry.value}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  return null;
 };
 
 const SentimentResults = ({ data }) => {
@@ -85,31 +36,31 @@ const SentimentResults = ({ data }) => {
     {
       model: 'VADER',
       positive: data.vader?.positive || 0,
-      neutral: data.vader?.neutral || 0,
       negative: data.vader?.negative || 0,
+      neutral: data.vader?.neutral || 0,
       sentiment: data.vader?.sentiment || 'error'
     },
     {
       model: 'Naive Bayes',
       positive: data.naive_bayes?.positive || 0,
-      neutral: data.naive_bayes?.neutral || 0, 
       negative: data.naive_bayes?.negative || 0,
+      neutral: data.naive_bayes?.neutral || 0,
       sentiment: data.naive_bayes?.sentiment || 'error'
     },
     {
       model: 'RoBERTa',
       positive: data.roberta?.positive || 0,
-      neutral: data.roberta?.neutral || 0,
       negative: data.roberta?.negative || 0,
+      neutral: data.roberta?.neutral || 0,
       sentiment: data.roberta?.sentiment || 'error'
     }
   ];
 
   // Prepare data for final sentiment pie chart
   const finalSentimentData = [
-    { name: 'Positive', value: data.conclusion?.positive?.length || 0, fill: chartConfig.positive.color },
-    { name: 'Neutral', value: data.conclusion?.neutral?.length || 0, fill: chartConfig.neutral.color },
-    { name: 'Negative', value: data.conclusion?.negative?.length || 0, fill: chartConfig.negative.color }
+    { name: 'Positive', value: data.conclusion?.positive?.length || 0, color: SENTIMENT_COLORS.positive },
+    { name: 'Negative', value: data.conclusion?.negative?.length || 0, color: SENTIMENT_COLORS.negative },
+    { name: 'Neutral', value: data.conclusion?.neutral?.length || 0, color: SENTIMENT_COLORS.neutral }
   ].filter(item => item.value > 0);
 
   // Prepare radar chart data for model comparison
@@ -121,29 +72,29 @@ const SentimentResults = ({ data }) => {
       RoBERTa: data.roberta?.positive || 0,
     },
     {
+      sentiment: 'Negative',
+      VADER: data.vader?.negative || 0,
+      'Naive Bayes': data.naive_bayes?.negative || 0,
+      RoBERTa: data.roberta?.negative || 0,
+    },
+    {
       sentiment: 'Neutral',
       VADER: data.vader?.neutral || 0,
       'Naive Bayes': data.naive_bayes?.neutral || 0,
       RoBERTa: data.roberta?.neutral || 0,
-    },
-    {
-      sentiment: 'Negative', 
-      VADER: data.vader?.negative || 0,
-      'Naive Bayes': data.naive_bayes?.negative || 0,
-      RoBERTa: data.roberta?.negative || 0,
     }
   ];
 
   return (
     <div className="space-y-6">
       {/* Final Result Card */}
-      <Card className="border-2" style={{ borderColor: chartConfig[data.conclusion?.final_sentiment]?.color || 'hsl(215, 20%, 65%)' }}>
+      <Card className="border-2" style={{ borderColor: getSentimentColor(data.conclusion?.final_sentiment) }}>
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-foreground">
+          <CardTitle className="flex items-center justify-center gap-2">
             Final Sentiment Analysis
             <Badge 
               className="text-white font-semibold"
-              style={{ backgroundColor: chartConfig[data.conclusion?.final_sentiment]?.color || 'hsl(215, 20%, 65%)' }}
+              style={{ backgroundColor: getSentimentColor(data.conclusion?.final_sentiment) }}
             >
               {data.conclusion?.final_sentiment?.toUpperCase()}
             </Badge>
@@ -165,17 +116,13 @@ const SentimentResults = ({ data }) => {
                     outerRadius={100}
                     paddingAngle={5}
                     dataKey="value"
-                    stroke="hsl(var(--border))"
-                    strokeWidth={1}
                   >
                     {finalSentimentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend 
-                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value) => <span className="text-foreground">{value}</span>}
+                  <Tooltip 
+                    formatter={(value) => [`${value} models`, 'Count']}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -185,38 +132,24 @@ const SentimentResults = ({ data }) => {
       </Card>
 
       {/* Model Comparison Bar Chart */}
-      <Card className="bg-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">Model Comparison</CardTitle>
+          <CardTitle>Model Comparison</CardTitle>
           <CardDescription>Confidence scores across all three models</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="model" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="model" />
+                <YAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+                <Tooltip 
+                  formatter={(value, name) => [`${formatScore(value)}%`, name.charAt(0).toUpperCase() + name.slice(1)]}
                 />
-                <YAxis 
-                  tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value) => <span className="text-foreground capitalize">{value}</span>}
-                />
-                <Bar dataKey="positive" fill={chartConfig.positive.color} name="positive" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="neutral" fill={chartConfig.neutral.color} name="neutral" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="negative" fill={chartConfig.negative.color} name="negative" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="positive" fill={SENTIMENT_COLORS.positive} name="positive" />
+                <Bar dataKey="negative" fill={SENTIMENT_COLORS.negative} name="negative" />
+                <Bar dataKey="neutral" fill={SENTIMENT_COLORS.neutral} name="neutral" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -224,54 +157,22 @@ const SentimentResults = ({ data }) => {
       </Card>
 
       {/* Radar Chart */}
-      <Card className="bg-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">Model Performance Radar</CardTitle>
+          <CardTitle>Model Performance Radar</CardTitle>
           <CardDescription>Comparative view of all models across sentiment categories</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
-                <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis 
-                  dataKey="sentiment" 
-                  tick={{ fontSize: 12, fill: 'hsl(var(--foreground))' }}
-                />
-                <PolarRadiusAxis 
-                  tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                  tickCount={4}
-                />
-                <Radar 
-                  name="VADER" 
-                  dataKey="VADER" 
-                  stroke={chartConfig.vader.color} 
-                  fill={chartConfig.vader.color} 
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                />
-                <Radar 
-                  name="Naive Bayes" 
-                  dataKey="Naive Bayes" 
-                  stroke={chartConfig.naive_bayes.color} 
-                  fill={chartConfig.naive_bayes.color} 
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                />
-                <Radar 
-                  name="RoBERTa" 
-                  dataKey="RoBERTa" 
-                  stroke={chartConfig.roberta.color} 
-                  fill={chartConfig.roberta.color} 
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value) => <span className="text-foreground">{value}</span>}
-                />
+                <PolarGrid />
+                <PolarAngleAxis dataKey="sentiment" />
+                <PolarRadiusAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+                <Radar name="VADER" dataKey="VADER" stroke="#f97316" fill="#f97316" fillOpacity={0.1} />
+                <Radar name="Naive Bayes" dataKey="Naive Bayes" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+                <Radar name="RoBERTa" dataKey="RoBERTa" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} />
+                <Tooltip formatter={(value) => `${formatScore(value)}%`} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -281,15 +182,12 @@ const SentimentResults = ({ data }) => {
       {/* Individual Model Details */}
       <div className="grid md:grid-cols-3 gap-4">
         {/* VADER */}
-        <Card className="bg-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
+            <CardTitle className="flex items-center gap-2">
               VADER
               {data.vader?.sentiment && (
-                <Badge 
-                  style={{ backgroundColor: chartConfig[data.vader.sentiment]?.color }} 
-                  className="text-white"
-                >
+                <Badge style={{ backgroundColor: getSentimentColor(data.vader.sentiment) }} className="text-white">
                   {data.vader.sentiment}
                 </Badge>
               )}
@@ -298,25 +196,25 @@ const SentimentResults = ({ data }) => {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.vader?.error ? (
-              <p className="text-destructive">Error: {data.vader.error}</p>
+              <p className="text-red-500">Error: {data.vader.error}</p>
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.positive.color }}>Positive:</span>
-                  <span className="text-foreground">{formatScore(data.vader?.positive || 0)}%</span>
+                  <span className="text-green-500">Positive:</span>
+                  <span>{formatScore(data.vader?.positive || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.neutral.color }}>Neutral:</span>
-                  <span className="text-foreground">{formatScore(data.vader?.neutral || 0)}%</span>
+                  <span className="text-red-500">Negative:</span>
+                  <span>{formatScore(data.vader?.negative || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.negative.color }}>Negative:</span>
-                  <span className="text-foreground">{formatScore(data.vader?.negative || 0)}%</span>
+                  <span className="text-gray-500">Neutral:</span>
+                  <span>{formatScore(data.vader?.neutral || 0)}%</span>
                 </div>
                 {data.vader?.compound !== undefined && (
-                  <div className="flex justify-between border-t border-border pt-2 mt-2">
-                    <span className="font-semibold text-foreground">Compound:</span>
-                    <span className={data.vader.compound >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                  <div className="flex justify-between border-t pt-2 mt-2">
+                    <span className="font-semibold">Compound:</span>
+                    <span className={data.vader.compound >= 0 ? 'text-green-500' : 'text-red-500'}>
                       {data.vader.compound.toFixed(3)}
                     </span>
                   </div>
@@ -327,15 +225,12 @@ const SentimentResults = ({ data }) => {
         </Card>
 
         {/* Naive Bayes */}
-        <Card className="bg-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
+            <CardTitle className="flex items-center gap-2">
               Naive Bayes
               {data.naive_bayes?.sentiment && (
-                <Badge 
-                  style={{ backgroundColor: chartConfig[data.naive_bayes.sentiment]?.color }} 
-                  className="text-white"
-                >
+                <Badge style={{ backgroundColor: getSentimentColor(data.naive_bayes.sentiment) }} className="text-white">
                   {data.naive_bayes.sentiment}
                 </Badge>
               )}
@@ -344,20 +239,20 @@ const SentimentResults = ({ data }) => {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.naive_bayes?.error ? (
-              <p className="text-destructive">Error: {data.naive_bayes.error}</p>
+              <p className="text-red-500">Error: {data.naive_bayes.error}</p>
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.positive.color }}>Positive:</span>
-                  <span className="text-foreground">{formatScore(data.naive_bayes?.positive || 0)}%</span>
+                  <span className="text-green-500">Positive:</span>
+                  <span>{formatScore(data.naive_bayes?.positive || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.neutral.color }}>Neutral:</span>
-                  <span className="text-foreground">{formatScore(data.naive_bayes?.neutral || 0)}%</span>
+                  <span className="text-red-500">Negative:</span>
+                  <span>{formatScore(data.naive_bayes?.negative || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.negative.color }}>Negative:</span>
-                  <span className="text-foreground">{formatScore(data.naive_bayes?.negative || 0)}%</span>
+                  <span className="text-gray-500">Neutral:</span>
+                  <span>{formatScore(data.naive_bayes?.neutral || 0)}%</span>
                 </div>
               </>
             )}
@@ -365,15 +260,12 @@ const SentimentResults = ({ data }) => {
         </Card>
 
         {/* RoBERTa */}
-        <Card className="bg-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-foreground">
+            <CardTitle className="flex items-center gap-2">
               RoBERTa
               {data.roberta?.sentiment && (
-                <Badge 
-                  style={{ backgroundColor: chartConfig[data.roberta.sentiment]?.color }} 
-                  className="text-white"
-                >
+                <Badge style={{ backgroundColor: getSentimentColor(data.roberta.sentiment) }} className="text-white">
                   {data.roberta.sentiment}
                 </Badge>
               )}
@@ -382,20 +274,20 @@ const SentimentResults = ({ data }) => {
           </CardHeader>
           <CardContent className="space-y-2">
             {data.roberta?.error ? (
-              <p className="text-destructive">Error: {data.roberta.error}</p>
+              <p className="text-red-500">Error: {data.roberta.error}</p>
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.positive.color }}>Positive:</span>
-                  <span className="text-foreground">{formatScore(data.roberta?.positive || 0)}%</span>
+                  <span className="text-green-500">Positive:</span>
+                  <span>{formatScore(data.roberta?.positive || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.neutral.color }}>Neutral:</span>
-                  <span className="text-foreground">{formatScore(data.roberta?.neutral || 0)}%</span>
+                  <span className="text-gray-500">Neutral:</span>
+                  <span>{formatScore(data.roberta?.neutral || 0)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: chartConfig.negative.color }}>Negative:</span>
-                  <span className="text-foreground">{formatScore(data.roberta?.negative || 0)}%</span>
+                  <span className="text-red-500">Negative:</span>
+                  <span>{formatScore(data.roberta?.negative || 0)}%</span>
                 </div>
               </>
             )}
@@ -404,18 +296,15 @@ const SentimentResults = ({ data }) => {
       </div>
 
       {/* Model Agreement Summary */}
-      <Card className="bg-card">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">Model Agreement Analysis</CardTitle>
+          <CardTitle>Model Agreement Analysis</CardTitle>
           <CardDescription>How the models voted on sentiment classification</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 rounded-lg bg-background border">
-              <div 
-                className="text-2xl font-bold" 
-                style={{ color: chartConfig.positive.color }}
-              >
+            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: `${SENTIMENT_COLORS.positive}10` }}>
+              <div className="text-2xl font-bold" style={{ color: SENTIMENT_COLORS.positive }}>
                 {data.conclusion?.positive?.length || 0}
               </div>
               <div className="text-sm text-muted-foreground">Voted Positive</div>
@@ -430,11 +319,8 @@ const SentimentResults = ({ data }) => {
               )}
             </div>
             
-            <div className="text-center p-4 rounded-lg bg-background border">
-              <div 
-                className="text-2xl font-bold" 
-                style={{ color: chartConfig.neutral.color }}
-              >
+            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: `${SENTIMENT_COLORS.neutral}10` }}>
+              <div className="text-2xl font-bold" style={{ color: SENTIMENT_COLORS.neutral }}>
                 {data.conclusion?.neutral?.length || 0}
               </div>
               <div className="text-sm text-muted-foreground">Voted Neutral</div>
@@ -449,11 +335,8 @@ const SentimentResults = ({ data }) => {
               )}
             </div>
             
-            <div className="text-center p-4 rounded-lg bg-background border">
-              <div 
-                className="text-2xl font-bold" 
-                style={{ color: chartConfig.negative.color }}
-              >
+            <div className="text-center p-4 rounded-lg" style={{ backgroundColor: `${SENTIMENT_COLORS.negative}10` }}>
+              <div className="text-2xl font-bold" style={{ color: SENTIMENT_COLORS.negative }}>
                 {data.conclusion?.negative?.length || 0}
               </div>
               <div className="text-sm text-muted-foreground">Voted Negative</div>
