@@ -1,9 +1,9 @@
 /* eslint-disable react/no-unescaped-entities */
 
-"use client"; {/* Bez ovog hook-ovi ne rade. */}
+"use client";
 
 import Header from "@/components/shared/Header";
-import SentimentResults from "@/components/shared/SentimentResults"; // Add this import
+import SentimentResults from "@/components/shared/SentimentResults";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CircleArrowUp } from "lucide-react";
@@ -22,9 +22,9 @@ export default function Home() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     
-    if (!inputValue.trim()) return; // Don't submit empty input
+    if (!inputValue.trim()) return;
     
     setLoading(true);
     setError(null);

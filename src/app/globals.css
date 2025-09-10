@@ -125,7 +125,6 @@
   }
 }
 
-/* Remove white focus outline on Recharts charts */
 .recharts-wrapper:focus,
 .recharts-surface:focus,
 .recharts-pie:focus,
