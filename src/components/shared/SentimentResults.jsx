@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 
-// Constants
 const SENTIMENT_COLORS = {
   positive: "#10b981",
   negative: "#ef4444",
@@ -34,12 +33,10 @@ const RADAR_COLORS = {
   RoBERTa: "#8b5cf6",
 };
 
-// Utility functions
 const getSentimentColor = (sentiment) => SENTIMENT_COLORS[sentiment] || "#6b7280";
 const formatScore = (score) => (score * 100).toFixed(1);
 const getModelDisplayName = (modelKey) => MODEL_DISPLAY_NAMES[modelKey] || modelKey;
 
-// Custom tooltip components
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
 
@@ -67,7 +64,6 @@ const CustomPieTooltip = ({ active, payload }) => {
   );
 };
 
-// Data transformation hooks/functions
 const useProcessedData = (data) => {
   if (!data) return null;
 
@@ -97,7 +93,6 @@ const useProcessedData = (data) => {
   return { comparisonData, finalSentimentData, radarData };
 };
 
-// Component parts
 const FinalResultCard = ({ data, finalSentimentData }) => (
   <Card className="bg-gray-900/40 backdrop-blur-sm border border-gray-800/60 rounded-2xl shadow-lg">
     <CardHeader className="text-center">
@@ -323,7 +318,6 @@ const ModelAgreementCard = ({ data }) => (
   </Card>
 );
 
-// Main component
 const SentimentResults = ({ data }) => {
   const processedData = useProcessedData(data);
   
