@@ -1,4 +1,3 @@
-# api/analyze.py
 from http.server import BaseHTTPRequestHandler
 import json
 import os
@@ -6,7 +5,6 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
 from gradio_client import Client
 
-# Initialize clients once
 nb_client = Client("maksimilijankatavic/nb-sentiment-classifier")
 analyzer = SentimentIntensityAnalyzer()
 
@@ -105,7 +103,6 @@ class handler(BaseHTTPRequestHandler):
                     scores = roberta_raw[0]
                     label_mapping = {"LABEL_0": "negative", "LABEL_1": "neutral", "LABEL_2": "positive"}
                     
-                    # Initialize scores
                     neg_score = neu_score = pos_score = 0.0
                     best_sentiment = "unknown"
                     best_score = 0.0
@@ -138,14 +135,12 @@ class handler(BaseHTTPRequestHandler):
             except Exception as e:
                 roberta_result = {"error": str(e)}
 
-            # Generate conclusion
             model_results = {
                 "vader": vader_result.get("sentiment", "error"),
                 "naive_bayes": naive_bayes_result.get("sentiment", "error"),
                 "roberta": roberta_result.get("sentiment", "error")
             }
             
-            # Group models by their sentiment choice
             sentiment_groups = {
                 "positive": [],
                 "negative": [],
@@ -159,18 +154,13 @@ class handler(BaseHTTPRequestHandler):
                     sentiment_groups[sentiment].append(model)
                     valid_votes[sentiment] += 1
             
-            # Determine final decision
             total_valid_votes = sum(valid_votes.values())
             if total_valid_votes > 0:
                 final_sentiment = max(valid_votes, key=valid_votes.get)
-                # If there's a tie, prioritize in order: negative, positive, neutral
                 max_votes = valid_votes[final_sentiment]
                 tied_sentiments = [s for s, count in valid_votes.items() if count == max_votes]
                 if len(tied_sentiments) > 1:
-                    if "negative" in tied_sentiments:
-                        final_sentiment = "negative"
-                    elif "positive" in tied_sentiments:
-                        final_sentiment = "positive"
+                    final_sentiment = "neutral"
             else:
                 final_sentiment = "error"
             
