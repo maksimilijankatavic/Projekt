@@ -22,7 +22,7 @@ const MODEL_DISPLAY_NAMES = {
 };
 
 const MODEL_DESCRIPTIONS = {
-  vader: "Rule-based sentiment analyzer",
+  vader: "Lexicon-based sentiment analyzer",
   naive_bayes: "Machine learning classifier",
   roberta: "Transformer-based model",
 };
