@@ -22,9 +22,9 @@ const MODEL_DISPLAY_NAMES = {
 };
 
 const MODEL_DESCRIPTIONS = {
-  vader: "Lexicon-based sentiment analyzer",
-  naive_bayes: "Machine learning classifier",
-  roberta: "Transformer-based model",
+  vader: "Lexicon-based approach",
+  naive_bayes: "Machine learning algorithm",
+  roberta: "Deep learning model",
 };
 
 const RADAR_COLORS = {
