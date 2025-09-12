@@ -32,10 +32,10 @@ export const metadata = {
   authors: [{ name: "Maksimilijan Katavić" }],
   creator: "Maksimilijan Katavić",
   publisher: "Maksimilijan Katavić",
-  robots: {
-    index: true,
-    follow: true,
-  },
+  // robots: {
+  //   index: true,
+  //   follow: true,
+  // },
 };
 
 export default function RootLayout({ children }) {
