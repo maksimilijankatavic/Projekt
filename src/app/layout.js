@@ -39,13 +39,14 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://sentimentlab.maksimilijankatavic.com',
+    // url: 'https://sentimentlab.maksimilijankatavic.com',
+    url: 'https://projekt-henna.vercel.app',
     siteName: 'SentimentLab',
     title: 'SentimentLab',
     description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/favicon.ico',
     //     width: 1200,
     //     height: 630,
         alt: 'SentimentLab',
@@ -61,7 +62,8 @@ export const metadata = {
   },
   category: 'technology',
   classification: 'Machine Learning Tools',
-  metadataBase: new URL('https://sentimentlab.maksimilijankatavic.com'),
+  // metadataBase: new URL('https://sentimentlab.maksimilijankatavic.com'),
+  metadataBase: new URL('https://projekt-henna.vercel.app'),
 };
 
 export default function RootLayout({ children }) {
