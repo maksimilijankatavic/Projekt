@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "SentimentLab",
-  description: "Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models. Analyze text sentiment with machine learning and natural language processing tools.",
+  description: "Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.",
   keywords: [
     "sentiment analysis",
     "VADER sentiment",
@@ -36,6 +36,29 @@ export const metadata = {
   //   index: true,
   //   follow: true,
   // },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://sentimentlab.maksimilijankatavic.com',
+    siteName: 'SentimentLab',
+    title: 'SentimentLab',
+    description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
+    // images: [
+    //   {
+    //     url: '/og-image.jpg', // Add your Open Graph image
+    //     width: 1200,
+    //     height: 630,
+    //     alt: 'SentimentLab - Sentiment Analysis Tool',
+    //   },
+    // ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'SentimentLab',
+    description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
+    images: ['https://sentimentlab.maksimilijankatavic.com/favicon.ico'], // Add your Twitter card image
+    creator: '@MaxKatavic',
+  },
 };
 
 export default function RootLayout({ children }) {
