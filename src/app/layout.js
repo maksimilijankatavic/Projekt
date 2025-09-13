@@ -27,43 +27,18 @@ export const metadata = {
     "NLP",
     "emotion detection",
     "text mining",
-    "AI sentiment tool"
+    "AI sentiment tool",
+    "Maksimilijan Katavić"
   ],
   authors: [{ name: "Maksimilijan Katavić" }],
   creator: "Maksimilijan Katavić",
   publisher: "Maksimilijan Katavić",
-  // robots: {
-  //   index: true,
-  //   follow: true,
-  // },
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    // url: 'https://sentimentlab.maksimilijankatavic.com',
-    url: 'https://projekt-henna.vercel.app',
-    siteName: 'SentimentLab',
-    title: 'SentimentLab',
-    description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
-    images: [
-      {
-        url: '/favicon.ico',
-    //     width: 1200,
-    //     height: 630,
-        alt: 'SentimentLab',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary',
-    title: 'SentimentLab',
-    description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
-    images: ['/favicon.ico'],
-    creator: '@MaxKatavic',
+  robots: {
+    index: true,
+    follow: true,
   },
   category: 'technology',
   classification: 'Machine Learning Tools',
-  // metadataBase: new URL('https://sentimentlab.maksimilijankatavic.com'),
-  metadataBase: new URL('https://projekt-henna.vercel.app'),
 };
 
 export default function RootLayout({ children }) {
