@@ -43,22 +43,25 @@ export const metadata = {
     siteName: 'SentimentLab',
     title: 'SentimentLab',
     description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
-    // images: [
-    //   {
-    //     url: '/og-image.jpg', // Add your Open Graph image
+    images: [
+      {
+        url: '/og-image.jpg',
     //     width: 1200,
     //     height: 630,
-    //     alt: 'SentimentLab - Sentiment Analysis Tool',
-    //   },
-    // ],
+        alt: 'SentimentLab',
+      },
+    ],
   },
   twitter: {
     card: 'summary',
     title: 'SentimentLab',
     description: 'Advanced sentiment analysis platform featuring VADER, Naive Bayes, and RoBERTa models.',
-    images: ['https://sentimentlab.maksimilijankatavic.com/favicon.ico'], // Add your Twitter card image
+    images: ['/favicon.ico'],
     creator: '@MaxKatavic',
   },
+  category: 'technology',
+  classification: 'Machine Learning Tools',
+  metadataBase: new URL('https://sentimentlab.maksimilijankatavic.com'),
 };
 
 export default function RootLayout({ children }) {
